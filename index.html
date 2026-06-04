@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SignHQ — Interpreter Hub</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/tabler-icons.min.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --green:#2E6B4A;--green-light:#E8F4EE;--green-mid:#4A9566;--green-dark:#1A4530;
+  --amber:#C17D2A;--amber-light:#FDF3E3;--amber-mid:#E09240;
+  --red:#C0392B;--red-light:#FDEDEC;
+  --blue:#2563A8;--blue-light:#EEF4FD;
+  --purple:#6B3FA0;--purple-light:#F3EEFB;
+  --bg:#F4F2EE;--surface:#FFFFFF;--surface2:#F9F8F6;--surface3:#F0EDE8;
+  --border:rgba(0,0,0,0.10);--border-strong:rgba(0,0,0,0.18);
+  --text:#1C1A17;--text-2:#5C5952;--text-3:#9C9890;
+  --rad:12px;--shadow:0 1px 3px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.04);
+  --nav-w:232px;
+}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+.shell{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:var(--nav-w);background:var(--green-dark);flex-shrink:0;display:flex;flex-direction:column;overflow-y:auto}
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column}
+.sb-logo{padding:20px 20px 14px;display:flex;align-items:center;gap:10px}
+.sb-logo-mark{width:34px;height:34px;background:var(--green-mid);border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:15px;color:#fff;flex-shrink:0}
+.sb-logo-text{font-size:15px;font-weight:600;color:#fff;line-height:1.2}
+.sb-logo-sub{font-size:10px;color:rgba(255,255,255,.45);font-family:'DM Mono',monospace;letter-spacing:.05em}
+.sb-profile{margin:0 12px 12px;background:rgba(255,255,255,.07);border-radius:10px;padding:11px 12px;display:flex;align-items:center;gap:10px}
+.sb-avatar{width:36px;height:36px;border-radius:50%;background:var(--green-mid);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;color:#fff;flex-shrink:0}
+.sb-user-name{font-size:13px;font-weight:500;color:#fff;line-height:1.2}
+.sb-user-role{font-size:10px;color:rgba(255,255,255,.45);font-family:'DM Mono',monospace}
+.sb-section{padding:6px 16px 3px;font-size:9px;font-family:'DM Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.28)}
+.sb-item{display:flex;align-items:center;gap:9px;padding:7px 12px;margin:1px 8px;border-radius:8px;cursor:pointer;color:rgba(255,255,255,.6);font-size:13px;font-weight:400;transition:all .14s;user-select:none;border:none;background:none;width:calc(100% - 16px);text-align:left}
+.sb-item i{font-size:16px;flex-shrink:0}
+.sb-item:hover{background:rgba(255,255,255,.08);color:rgba(255,255,255,.9)}
+.sb-item.active{background:rgba(255,255,255,.14);color:#fff;font-weight:500}
+.sb-item .badge{margin-left:auto;background:var(--amber-mid);color:#fff;font-size:9px;font-family:'DM Mono',monospace;padding:2px 6px;border-radius:10px;font-weight:600}
+.sb-spacer{flex:1}
+.sb-bottom{padding:10px}
+.sb-bottom-btn{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;cursor:pointer;color:rgba(255,255,255,.45);font-size:12px;transition:all .14s;width:100%;border:none;background:none;font-family:'DM Sans',sans-serif}
+.sb-bottom-btn:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.8)}
+.topbar{padding:15px 28px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:16px;flex-shrink:0;position:sticky;top:0;z-index:10}
+.topbar-title{font-family:'DM Serif Display',serif;font-size:20px;color:var(--text)}
+.topbar-sub{font-size:11px;color:var(--text-3);font-family:'DM Mono',monospace;margin-top:1px}
+.topbar-actions{margin-left:auto;display:flex;align-items:center;gap:8px}
+.page{display:none}
+.page.active{display:block}
+.pi{padding:22px 28px 48px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .14s;border:1px solid var(--border-strong);background:var(--surface);color:var(--text)}
+.btn:hover{background:var(--surface2)}
+.btn.primary{background:var(--green);color:#fff;border-color:var(--green-dark)}
+.btn.primary:hover{background:var(--green-dark)}
+.btn.sm{font-size:12px;padding:5px 11px}
+.btn.ghost{border-color:transparent;background:transparent;color:var(--text-2)}
+.btn.ghost:hover{background:var(--surface2)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rad);box-shadow:var(--shadow)}
+.cp{padding:20px 22px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.stat{background:var(--surface2);border-radius:10px;padding:14px 16px}
+.stat-val{font-size:25px;font-weight:600;color:var(--text);font-family:'DM Serif Display',serif;line-height:1}
+.stat-label{font-size:10px;color:var(--text-3);font-family:'DM Mono',monospace;letter-spacing:.04em;margin-top:4px;text-transform:uppercase}
+.stat-delta{font-size:11px;color:var(--green);margin-top:3px}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;font-family:'DM Mono',monospace}
+.pg{background:var(--green-light);color:var(--green-dark)}
+.pa{background:var(--amber-light);color:var(--amber)}
+.pr{background:var(--red-light);color:var(--red)}
+.pb{background:var(--blue-light);color:var(--blue)}
+.pp{background:var(--purple-light);color:var(--purple)}
+.pz{background:var(--surface3);color:var(--text-2)}
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{font-size:10px;font-family:'DM Mono',monospace;letter-spacing:.07em;text-transform:uppercase;color:var(--text-3);padding:9px 14px;border-bottom:1px solid var(--border);text-align:left;font-weight:500}
+.tbl td{padding:10px 14px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:var(--surface2)}
+.fr{display:grid;gap:13px;margin-bottom:13px}
+.fr1{grid-template-columns:1fr}.fr2{grid-template-columns:1fr 1fr}.fr3{grid-template-columns:1fr 1fr 1fr}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:10px;color:var(--text-2);font-family:'DM Mono',monospace;letter-spacing:.05em;text-transform:uppercase}
+.field input,.field select,.field textarea{font-size:13px;padding:8px 10px;border:1px solid var(--border-strong);border-radius:8px;background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;transition:border-color .14s;-webkit-appearance:none}
+.field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--green);box-shadow:0 0 0 3px rgba(46,107,74,.11)}
+.field textarea{resize:vertical;min-height:70px;line-height:1.55}
+.sl{font-size:10px;font-family:'DM Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--text-3);margin-bottom:9px}
+.tb-bar{display:flex;gap:2px;border-bottom:1px solid var(--border);margin-bottom:18px}
+.tb{padding:9px 15px;font-size:13px;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-2);transition:all .14s;font-weight:500;margin-bottom:-1px}
+.tb.active{border-bottom-color:var(--green);color:var(--green)}
+.tb:hover{color:var(--text)}
+.tp{display:none}
+.tp.active{display:block}
+.pbar{height:5px;background:var(--surface3);border-radius:3px;overflow:hidden;margin-top:5px}
+.pbf{height:100%;border-radius:3px;background:var(--green)}
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:200;display:none;align-items:center;justify-content:center;padding:16px}
+.modal-ov.open{display:flex}
+.modal{background:var(--surface);border-radius:16px;width:100%;max-width:620px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.22)}
+.mh{padding:19px 22px 13px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.mh h2{font-family:'DM Serif Display',serif;font-size:18px}
+.mb{padding:18px 22px}
+.mf{padding:13px 22px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px}
+.inv-row{display:flex;justify-content:space-between;align-items:center;padding:8px 13px;border-radius:8px;background:var(--surface2);margin-bottom:4px;font-size:13px}
+.inv-total{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-radius:8px;background:var(--green);color:#fff;font-weight:600;font-size:14px;margin-top:8px}
+#toast{position:fixed;bottom:24px;right:24px;background:var(--green);color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .3s;z-index:999;font-weight:500}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:3px}
+.auth-screen{position:fixed;inset:0;background:var(--green-dark);display:flex;align-items:center;justify-content:center;z-index:500}
+.auth-card{background:var(--surface);border-radius:20px;padding:34px;width:380px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.perf-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);cursor:pointer;transition:all .15s}
+.perf-card:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.1)}
+.pch{padding:15px 17px 12px}
+.pch-type{font-size:9px;font-family:'DM Mono',monospace;letter-spacing:.1em;opacity:.65;text-transform:uppercase;display:flex;align-items:center;gap:5px}
+.pch-title{font-family:'DM Serif Display',serif;font-size:19px;margin-top:2px;margin-bottom:2px;color:#fff}
+.pch-sub{font-size:11px;opacity:.7;color:#fff}
+.pcb{padding:13px 17px}
+.pmeta{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px}
+.pm{font-size:11px;color:var(--text-3);font-family:'DM Mono',monospace}
+.pm strong{color:var(--text-2);display:block;font-size:12px;margin-bottom:1px}
+.song-list{display:flex;flex-direction:column;gap:3px;margin-top:6px}
+.song-item{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--surface2);border-radius:7px;font-size:12px;border:1px solid var(--border)}
+.song-item.ok{border-color:rgba(74,149,102,.35)}
+.song-assigned{font-size:10px;font-family:'DM Mono',monospace;color:var(--green)}
+.prof-banner{height:75px;border-radius:12px 12px 0 0}
+.prof-av-wrap{margin:-28px 20px 0;position:relative;display:inline-block}
+.prof-av{width:56px;height:56px;border-radius:50%;border:3px solid var(--surface);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:20px;color:#fff}
+.prof-cert{width:17px;height:17px;background:var(--green);border-radius:50%;border:2px solid var(--surface);position:absolute;bottom:2px;right:0;display:flex;align-items:center;justify-content:center}
+.tag-cl{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.k-col{min-width:235px;max-width:255px;flex-shrink:0}
+.k-col-head{font-size:12px;font-weight:600;color:var(--text-2);padding:7px 2px;display:flex;align-items:center;justify-content:space-between}
+.k-col-head span{font-size:10px;font-family:'DM Mono',monospace;background:var(--surface3);border-radius:10px;padding:1px 7px;color:var(--text-3)}
+.kc{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:11px 13px;margin-bottom:7px;cursor:pointer;transition:all .15s;box-shadow:var(--shadow)}
+.kc:hover{border-color:var(--green-mid);transform:translateY(-1px)}
+.kc-title{font-size:13px;font-weight:500;margin-bottom:5px}
+.kc-meta{font-size:11px;color:var(--text-3);font-family:'DM Mono',monospace;display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.av-sm{width:20px;height:20px;border-radius:50%;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;flex-shrink:0}
+#cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-top:8px}
+.cal-dn{font-size:10px;font-family:'DM Mono',monospace;color:var(--text-3);text-align:center;padding:4px}
+.cal-cell{min-height:68px;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px;font-size:11px;cursor:pointer;transition:border-color .14s}
+.cal-cell:hover{border-color:var(--green-mid)}
+.cal-cell.today{border-color:var(--green);background:var(--green-light)}
+.cal-cell.om{opacity:.35}
+.cal-num{font-weight:500;font-size:12px;color:var(--text-2);margin-bottom:2px}
+.ce{border-radius:4px;padding:2px 5px;font-size:9px;font-family:'DM Mono',monospace;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff}
+.ce-gen{background:var(--green)}
+.ce-con{background:var(--purple)}
+.ce-mus{background:var(--amber)}
+.ce-mtg{background:var(--blue)}
+.eth-t{padding:13px 15px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);margin-bottom:8px}
+.eth-n{font-size:10px;font-family:'DM Mono',monospace;color:var(--green);letter-spacing:.05em;margin-bottom:2px}
+.eth-title{font-size:13px;font-weight:600;margin-bottom:4px}
+.eth-text{font-size:12px;color:var(--text-2);line-height:1.65}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div class="auth-screen" id="auth-screen">
+  <div class="auth-card">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:26px">
+      <div style="width:42px;height:42px;background:var(--green);border-radius:11px;display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:18px;color:#fff">S</div>
+      <div><div style="font-family:'DM Serif Display',serif;font-size:22px">SignHQ</div><div style="font-size:10px;color:var(--text-3);font-family:'DM Mono',monospace">Interpreter Hub Platform</div></div>
+    </div>
+    <div id="am-login">
+      <div class="fr fr1" style="margin-bottom:12px"><div class="field"><label>Email</label><input type="email" id="lg-email" value="alex@signhq.app" placeholder="you@example.com"></div></div>
+      <div class="fr fr1"><div class="field"><label>Password</label><input type="password" id="lg-pass" value="password" placeholder="••••••••"></div></div>
+      <button class="btn primary" style="width:100%;margin-top:16px;justify-content:center;padding:10px" onclick="doLogin()"><i class="ti ti-login"></i> Sign In</button>
+      <div style="text-align:center;margin-top:14px;font-size:12px;color:var(--text-3)">New? <span style="color:var(--green);cursor:pointer;font-weight:500" onclick="showReg()">Create account</span></div>
+    </div>
+    <div id="am-reg" style="display:none">
+      <div class="fr fr2"><div class="field"><label>First Name</label><input id="rg-fn" placeholder="Alex"></div><div class="field"><label>Last Name</label><input id="rg-ln" placeholder="Rivera"></div></div>
+      <div class="fr fr1"><div class="field"><label>Email</label><input type="email" id="rg-email" placeholder="you@example.com"></div></div>
+      <div class="fr fr2">
+        <div class="field"><label>Role</label><select id="rg-role"><option>ASL Interpreter</option><option>CDI (Deaf Interpreter)</option><option>Team Coordinator</option><option>Agency Admin</option></select></div>
+        <div class="field"><label>Certification</label><select id="rg-cert"><option>NIC</option><option>NIC Advanced</option><option>NIC Master</option><option>RID CI</option><option>CDI</option><option>QMHI</option><option>In Progress</option></select></div>
+      </div>
+      <div class="fr fr1"><div class="field"><label>Password</label><input type="password" id="rg-pass" placeholder="Create password"></div></div>
+      <button class="btn primary" style="width:100%;margin-top:14px;justify-content:center" onclick="doReg()"><i class="ti ti-user-plus"></i> Create Account</button>
+      <div style="text-align:center;margin-top:13px;font-size:12px;color:var(--text-3)">Have an account? <span style="color:var(--green);cursor:pointer;font-weight:500" onclick="showLogin()">Sign in</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="shell" id="app-shell" style="display:none">
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="sb-logo-mark">S</div>
+      <div><div class="sb-logo-text">SignHQ</div><div class="sb-logo-sub">Interpreter Hub</div></div>
+    </div>
+    <div class="sb-profile">
+      <div class="sb-avatar" id="sb-av">AR</div>
+      <div><div class="sb-user-name" id="sb-name">Alex Rivera</div><div class="sb-user-role" id="sb-role">NIC Master · Coordinator</div></div>
+    </div>
+    <div class="sb-section">Overview</div>
+    <button class="sb-item active" onclick="nav('dashboard',this)"><i class="ti ti-layout-dashboard"></i> Dashboard</button>
+    <button class="sb-item" onclick="nav('calendar',this)"><i class="ti ti-calendar"></i> Calendar</button>
+    <button class="sb-item" onclick="nav('kanban',this)"><i class="ti ti-layout-kanban"></i> Assignments <span class="badge">4</span></button>
+    <div class="sb-section">Productions</div>
+    <button class="sb-item" onclick="nav('concerts',this)"><i class="ti ti-microphone-2"></i> Concerts</button>
+    <button class="sb-item" onclick="nav('plays',this)"><i class="ti ti-theater"></i> Musicals & Plays</button>
+    <div class="sb-section">People</div>
+    <button class="sb-item" onclick="nav('interpreters',this)"><i class="ti ti-users"></i> Interpreters</button>
+    <button class="sb-item" onclick="nav('myprofile',this)"><i class="ti ti-user-circle"></i> My Profile</button>
+    <div class="sb-section">Resources</div>
+    <button class="sb-item" onclick="nav('ethics',this)"><i class="ti ti-book"></i> Code of Ethics</button>
+    <button class="sb-item" onclick="nav('prep',this)"><i class="ti ti-file-upload"></i> Prep Materials</button>
+    <button class="sb-item" onclick="nav('finances',this)"><i class="ti ti-receipt"></i> Finances <span class="badge">2</span></button>
+    <div class="sb-spacer"></div>
+    <div class="sb-bottom">
+      <button class="sb-bottom-btn" onclick="doLogout()"><i class="ti ti-logout"></i> Sign Out</button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div><div class="topbar-title" id="tb-title">Dashboard</div><div class="topbar-sub" id="tb-sub">Welcome back</div></div>
+      <div class="topbar-actions">
+        <button class="btn sm ghost"><i class="ti ti-search"></i></button>
+        <button class="btn sm ghost"><i class="ti ti-bell"></i></button>
+        <button class="btn sm primary" onclick="openModal('new-item')"><i class="ti ti-plus"></i> New</button>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="page active pi" id="page-dashboard">
+      <div style="margin-bottom:20px">
+        <div style="font-family:'DM Serif Display',serif;font-size:26px;margin-bottom:2px" id="dash-greet">Good morning, Alex</div>
+        <div style="color:var(--text-3);font-size:13px">You have 3 upcoming assignments this week.</div>
+      </div>
+      <div class="g4" style="margin-bottom:20px">
+        <div class="stat"><div class="stat-val">14</div><div class="stat-label">Active Assignments</div><div class="stat-delta">+3 this month</div></div>
+        <div class="stat"><div class="stat-val">8</div><div class="stat-label">Interpreters Rostered</div><div class="stat-delta">2 pending approval</div></div>
+        <div class="stat"><div class="stat-val">$4,280</div><div class="stat-label">Month Revenue</div><div class="stat-delta">↑ 12% vs last</div></div>
+        <div class="stat"><div class="stat-val">3</div><div class="stat-label">Open Slots</div><div class="stat-delta" style="color:var(--amber)">Needs assignment</div></div>
+      </div>
+      <div class="g2">
+        <div class="card cp">
+          <div class="sl">Upcoming this week</div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <div style="display:flex;align-items:center;gap:11px;padding:9px 11px;background:var(--surface2);border-radius:9px;border:1px solid var(--border)">
+              <div style="width:36px;height:36px;background:var(--purple-light);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0"><span style="font-size:8px;font-family:'DM Mono',monospace;color:var(--purple)">JUN</span><span style="font-size:14px;font-weight:700;color:var(--purple);line-height:1">5</span></div>
+              <div style="flex:1"><div style="font-size:13px;font-weight:500">Phantom of the Opera — Act II</div><div style="font-size:11px;color:var(--text-3);font-family:'DM Mono',monospace">7:30 PM · Riverside Theater</div></div>
+              <span class="pill pp">Musical</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:11px;padding:9px 11px;background:var(--surface2);border-radius:9px;border:1px solid var(--border)">
+              <div style="width:36px;height:36px;background:var(--green-light);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0"><span style="font-size:8px;font-family:'DM Mono',monospace;color:var(--green)">JUN</span><span style="font-size:14px;font-weight:700;color:var(--green);line-height:1">7</span></div>
+              <div style="flex:1"><div style="font-size:13px;font-weight:500">Medical Conference — Keynote</div><div style="font-size:11px;color:var(--text-3);font-family:'DM Mono',monospace">10:00 AM · Convention Center</div></div>
+              <span class="pill pg">Assigned</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:11px;padding:9px 11px;background:var(--surface2);border-radius:9px;border:1px solid var(--border)">
+              <div style="width:36px;height:36px;background:var(--amber-light);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0"><span style="font-size:8px;font-family:'DM Mono',monospace;color:var(--amber)">JUN</span><span style="font-size:14px;font-weight:700;color:var(--amber);line-height:1">8</span></div>
+              <div style="flex:1"><div style="font-size:13px;font-weight:500">Taylor Swift Tribute — Full Concert</div><div style="font-size:11px;color:var(--text-3);font-family:'DM Mono',monospace">8:00 PM · Amphitheater · <span style="color:var(--red)">1 slot open</span></div></div>
+              <span class="pill pr">Needs Interp</span>
+            </div>
+          </div>
+        </div>
+        <div class="card cp">
+          <div class="sl">Prep progress tracker</div>
+          <div style="display:flex;flex-direction:column;gap:11px;margin-top:4px">
+            <div><div style="display:flex;justify-content:space-between;font-size:12px"><span style="font-weight:500">Phantom Act II</span><span style="color:var(--text-3);font-family:'DM Mono',monospace">2,847 lines</span></div><div class="pbar"><div class="pbf" style="width:78%"></div></div><div style="font-size:10px;color:var(--text-3);font-family:'DM Mono',monospace;margin-top:2px">78% glossed</div></div>
+            <div><div style="display:flex;justify-content:space-between;font-size:12px"><span style="font-weight:500">TS Tribute Set List</span><span style="color:var(--text-3);font-family:'DM Mono',monospace">1,204 words</span></div><div class="pbar"><div class="pbf" style="width:30%;background:var(--amber)"></div></div><div style="font-size:10px;color:var(--text-3);font-family:'DM Mono',monospace;margin-top:2px">30% prepared</div></div>
+            <div><div style="display:flex;justify-content:space-between;font-size:12px"><span style="font-weight:500">Medical Conference</span><span style="color:var(--text-3);font-family:'DM Mono',monospace">~320 terms</span></div><div class="pbar"><div class="pbf" style="width:95%"></div></div><div style="font-size:10px;color:var(--text-3);font-family:'DM Mono',monospace;margin-top:2px">95% — ready</div></div>
+          </div>
+          <div class="sl" style="margin-top:16px">Outstanding invoices</div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 11px;background:var(--amber-light);border-radius:8px;border:1px solid rgba(193,125,42,.2);margin-bottom:6px">
+            <div style="font-size:12px"><span style="font-weight:500">Riverside Theater</span> <span style="color:var(--text-3)">INV-2024-031</span></div>
+            <div style="font-size:13px;font-weight:600;color:var(--amber)">$640</div>
+          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 11px;background:var(--red-light);border-radius:8px;border:1px solid rgba(192,57,43,.2)">
+            <div style="font-size:12px"><span style="font-weight:500">City Arts Council</span> <span style="color:var(--text-3)">INV-2024-028 · 12 days overdue</span></div>
+            <div style="font-size:13px;font-weight:600;color:var(--red)">$1,200</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div class="page pi" id="page-calendar">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="font-family:'DM Serif Display',serif;font-size:20px">June 2026</div>
+        <div style="display:flex;gap:6px"><button class="btn sm ghost"><i class="ti ti-chevron-left"></i></button><button class="btn sm ghost">Today</button><button class="btn sm ghost"><i class="ti ti-chevron-right"></i></button></div>
+      </div>
+      <div id="cal-grid">
+        <div class="cal-dn">Sun</div><div class="cal-dn">Mon</div><div class="cal-dn">Tue</div><div class="cal-dn">Wed</div><div class="cal-dn">Thu</div><div class="cal-dn">Fri</div><div class="cal-dn">Sat</div>
+      </div>
+      <div class="card cp" style="margin-top:14px">
+        <div class="sl">Legend</div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;font-family:'DM Mono',monospace"><span style="width:10px;height:10px;background:var(--green);border-radius:3px;display:inline-block"></span> Assignment</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;font-family:'DM Mono',monospace"><span style="width:10px;height:10px;background:var(--purple);border-radius:3px;display:inline-block"></span> Concert</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;font-family:'DM Mono',monospace"><span style="width:10px;height:10px;background:var(--amber);border-radius:3px;display:inline-block"></span> Musical/Play</div>
+          <div style="display:flex;align-items:center;gap:5px;font-size:11px;font-family:'DM Mono',monospace"><span style="width:10px;height:10px;background:var(--blue);border-radius:3px;display:inline-block"></span> Meeting</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KANBAN -->
+    <div class="page pi" id="page-kanban">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn primary sm" onclick="openModal('new-assign')"><i class="ti ti-plus"></i> New Assignment</button></div>
+      <div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:8px">
+        <div class="k-col">
+          <div class="k-col-head">Incoming <span>3</span></div>
+          <div class="kc" onclick="openAssignModal('Medical Deposition — Smith Case')"><div class="kc-title">Medical Deposition — Smith Case</div><div class="kc-meta"><span class="pill pg" style="font-size:9px">Legal</span> Jun 12 · 9 AM</div><div class="kc-meta" style="margin-top:4px">3 hrs · $180/hr</div><div style="display:flex;gap:3px;margin-top:7px"><div class="av-sm" style="background:var(--text-3)">?</div></div></div>
+          <div class="kc" onclick="openAssignModal('Riverside High Graduation')"><div class="kc-title">Riverside High Graduation</div><div class="kc-meta"><span class="pill pb" style="font-size:9px">Education</span> Jun 14 · 2 PM</div><div class="kc-meta" style="margin-top:3px">2 hrs · 2 interpreters needed</div><div style="display:flex;gap:3px;margin-top:7px"><div class="av-sm" style="background:var(--text-3)">?</div><div class="av-sm" style="background:var(--text-3);margin-left:-4px">?</div></div></div>
+          <div class="kc" onclick="openAssignModal('Corp Training — DEI Workshop')"><div class="kc-title">Corp Training — DEI Workshop</div><div class="kc-meta"><span class="pill pz" style="font-size:9px">Corporate</span> Jun 18 · 10 AM</div></div>
+        </div>
+        <div class="k-col">
+          <div class="k-col-head">Assigned <span>4</span></div>
+          <div class="kc" onclick="openAssignModal('Phantom of the Opera — Act II')"><div class="kc-title">Phantom of the Opera — Act II</div><div class="kc-meta"><span class="pill pa" style="font-size:9px">Musical</span> Jun 5 · 7:30 PM</div><div class="kc-meta" style="margin-top:3px">Riverside Theater</div><div style="display:flex;gap:3px;margin-top:7px"><div class="av-sm" style="background:var(--green)">AR</div><div class="av-sm" style="background:var(--blue);margin-left:-4px">MK</div></div></div>
+          <div class="kc" onclick="openAssignModal('Medical Conference Keynote')"><div class="kc-title">Medical Conference Keynote</div><div class="kc-meta"><span class="pill pg" style="font-size:9px">Healthcare</span> Jun 7 · 10 AM</div><div style="display:flex;gap:3px;margin-top:7px"><div class="av-sm" style="background:var(--green)">JT</div></div></div>
+          <div class="kc" onclick="openAssignModal('Taylor Swift Tribute Concert')"><div class="kc-title">Taylor Swift Tribute Concert</div><div class="kc-meta"><span class="pill pp" style="font-size:9px">Concert</span> Jun 8 · 8 PM <span style="color:var(--red)">· 1 open</span></div><div style="display:flex;gap:3px;margin-top:7px"><div class="av-sm" style="background:var(--purple)">LR</div><div class="av-sm" style="background:var(--text-3);margin-left:-4px">?</div></div></div>
+          <div class="kc" onclick="openAssignModal('City Council Meeting')"><div class="kc-title">City Council Public Meeting</div><div class="kc-meta"><span class="pill pz" style="font-size:9px">Government</span> Jun 10 · 6 PM</div><div style="display:flex;gap:3px;margin-top:7px"><div class="av-sm" style="background:var(--green)">AR</div></div></div>
+        </div>
+        <div class="k-col">
+          <div class="k-col-head">In Prep <span>3</span></div>
+          <div class="kc"><div class="kc-title">Hamilton — Weekend Run</div><div class="kc-meta"><span class="pill pa" style="font-size:9px">Musical</span> Jun 20–22</div><div class="pbar" style="margin-top:7px"><div class="pbf" style="width:60%"></div></div><div style="font-size:10px;color:var(--text-3);font-family:'DM Mono',monospace;margin-top:2px">60% glossed</div></div>
+          <div class="kc"><div class="kc-title">NAACP Annual Gala</div><div class="kc-meta"><span class="pill pz" style="font-size:9px">Event</span> Jun 28</div><div class="pbar" style="margin-top:7px"><div class="pbf" style="width:40%;background:var(--amber)"></div></div></div>
+          <div class="kc"><div class="kc-title">Beyoncé Tribute Night</div><div class="kc-meta"><span class="pill pp" style="font-size:9px">Concert</span> Jul 4</div><div class="pbar" style="margin-top:7px"><div class="pbf" style="width:15%;background:var(--red)"></div></div></div>
+        </div>
+        <div class="k-col">
+          <div class="k-col-head">Completed <span>2</span></div>
+          <div class="kc" style="opacity:.7"><div class="kc-title">State Deaf Services Forum</div><div class="kc-meta"><span class="pill pg" style="font-size:9px">✓ Done</span> Jun 1</div><div class="kc-meta" style="margin-top:4px;color:var(--green)">Invoice sent · $960</div></div>
+          <div class="kc" style="opacity:.7"><div class="kc-title">University Commencement</div><div class="kc-meta"><span class="pill pg" style="font-size:9px">✓ Done</span> May 28</div><div class="kc-meta" style="margin-top:4px;color:var(--green)">Invoice paid · $1,200</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONCERTS -->
+    <div class="page pi" id="page-concerts">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn primary sm" onclick="openModal('new-concert')"><i class="ti ti-plus"></i> New Concert</button></div>
+      <div class="g2">
+        <div class="perf-card" onclick="showToast('Opening Taylor Swift Tribute detail...')">
+          <div class="pch" style="background:var(--purple)">
+            <div class="pch-type" style="color:rgba(255,255,255,.7)"><i class="ti ti-microphone-2"></i> Concert</div>
+            <div class="pch-title">Taylor Swift Tribute Night</div>
+            <div class="pch-sub">June 8 · Riverside Amphitheater · 8:00 PM</div>
+          </div>
+          <div class="pcb">
+            <div class="pmeta">
+              <div class="pm"><strong>Director</strong>Jamie Cortez</div>
+              <div class="pm"><strong>Songs</strong>22 tracks</div>
+              <div class="pm"><strong>Est. Words</strong>~8,400</div>
+              <div class="pm"><strong>Interps</strong><span style="color:var(--red)">1 of 2 filled</span></div>
+            </div>
+            <div class="sl">Songs & interpreters</div>
+            <div class="song-list">
+              <div class="song-item ok"><div><span style="font-weight:500">Shake It Off</span> <span style="font-size:10px;color:var(--text-3)">· 386 words · upbeat pop</span></div><span class="song-assigned">✓ L. Rivera</span></div>
+              <div class="song-item ok"><div><span style="font-weight:500">Anti-Hero</span> <span style="font-size:10px;color:var(--text-3)">· 412 words · introspective</span></div><span class="song-assigned">✓ L. Rivera</span></div>
+              <div class="song-item"><div><span style="font-weight:500">Love Story</span> <span style="font-size:10px;color:var(--text-3)">· 344 words · ballad</span></div><span style="font-size:10px;color:var(--red);font-family:'DM Mono',monospace">⚠ Unassigned</span></div>
+              <div class="song-item ok"><div><span style="font-weight:500">Blank Space</span> <span style="font-size:10px;color:var(--text-3)">· 398 words · narrative</span></div><span class="song-assigned">✓ L. Rivera</span></div>
+              <div class="song-item" style="color:var(--text-3)">+ 18 more tracks — click to expand</div>
+            </div>
+          </div>
+        </div>
+        <div class="perf-card" onclick="showToast('Opening Beyoncé Tribute detail...')">
+          <div class="pch" style="background:#5B3A8B">
+            <div class="pch-type" style="color:rgba(255,255,255,.7)"><i class="ti ti-microphone-2"></i> Concert</div>
+            <div class="pch-title">Beyoncé Tribute Night</div>
+            <div class="pch-sub">July 4 · City Amphitheater · 7:30 PM</div>
+          </div>
+          <div class="pcb">
+            <div class="pmeta">
+              <div class="pm"><strong>Director</strong>Marcus Webb</div>
+              <div class="pm"><strong>Songs</strong>18 tracks</div>
+              <div class="pm"><strong>Est. Words</strong>~6,800</div>
+              <div class="pm"><strong>Status</strong><span class="pill pa" style="font-size:9px">In Prep</span></div>
+            </div>
+            <div class="sl">Songs & interpreters</div>
+            <div class="song-list">
+              <div class="song-item"><div><span style="font-weight:500">Crazy in Love</span> <span style="font-size:10px;color:var(--text-3)">· 298 words · high energy</span></div><span style="font-size:10px;color:var(--red);font-family:'DM Mono',monospace">⚠ Unassigned</span></div>
+              <div class="song-item"><div><span style="font-weight:500">Halo</span> <span style="font-size:10px;color:var(--text-3)">· 352 words · ballad</span></div><span style="font-size:10px;color:var(--red);font-family:'DM Mono',monospace">⚠ Unassigned</span></div>
+              <div class="song-item"><div><span style="font-weight:500">Lemonade Medley</span> <span style="font-size:10px;color:var(--text-3)">· 580 words · complex</span></div><span style="font-size:10px;color:var(--red);font-family:'DM Mono',monospace">⚠ Unassigned</span></div>
+              <div class="song-item" style="color:var(--text-3)">+ 15 more tracks — click to expand</div>
+            </div>
+            <div style="margin-top:10px;font-size:11px;color:var(--text-2);background:var(--surface2);border-radius:7px;padding:8px 10px;line-height:1.6"><strong>Director notes:</strong> Emphasize Black cultural narrative and Deaf community representation. Research AAVE signing conventions and consult with Deaf Black community members for authentic representation.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PLAYS -->
+    <div class="page pi" id="page-plays">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn primary sm" onclick="openModal('new-play')"><i class="ti ti-plus"></i> New Production</button></div>
+      <div class="g2">
+        <div class="perf-card" onclick="showToast('Opening Phantom detail view...')">
+          <div class="pch" style="background:#9A6B2E">
+            <div class="pch-type" style="color:rgba(255,255,255,.7)"><i class="ti ti-theater"></i> Musical</div>
+            <div class="pch-title">Phantom of the Opera</div>
+            <div class="pch-sub">June 5–8 · Riverside Theater · 7:30 PM</div>
+          </div>
+          <div class="pcb">
+            <div class="pmeta"><div class="pm"><strong>Director</strong>Patricia Osei</div><div class="pm"><strong>Acts</strong>2</div><div class="pm"><strong>Scenes</strong>14</div><div class="pm"><strong>Lines</strong>2,847</div></div>
+            <div class="sl">Characters, scenes & interpreters</div>
+            <div class="song-list">
+              <div class="song-item ok"><div><span style="font-weight:500">Christine Daaé</span> <span style="font-size:10px;color:var(--text-3)">Soprano · 284 lines · Acts 1&2</span></div><span class="song-assigned">✓ A. Rivera</span></div>
+              <div class="song-item ok"><div><span style="font-weight:500">The Phantom</span> <span style="font-size:10px;color:var(--text-3)">Baritone · 312 lines · Acts 1&2</span></div><span class="song-assigned">✓ M. Kim</span></div>
+              <div class="song-item ok"><div><span style="font-weight:500">Raoul</span> <span style="font-size:10px;color:var(--text-3)">Tenor · 198 lines</span></div><span class="song-assigned">✓ A. Rivera</span></div>
+              <div class="song-item ok"><div><span style="font-weight:500">Madame Giry</span> <span style="font-size:10px;color:var(--text-3)">Alto · 96 lines</span></div><span class="song-assigned">✓ M. Kim</span></div>
+              <div class="song-item" style="color:var(--text-3)">+ 6 more characters + ensemble scenes</div>
+            </div>
+            <div style="margin-top:10px;font-size:11px;color:var(--text-2);background:var(--surface2);border-radius:7px;padding:8px 10px;line-height:1.6"><strong>Director notes:</strong> Prioritize emotional storytelling over literal text. Phantom's signing should convey menace and passion. Work with Deaf community on ASL poetic form.</div>
+          </div>
+        </div>
+        <div class="perf-card" onclick="showToast('Opening Hamilton detail view...')">
+          <div class="pch" style="background:#4A3280">
+            <div class="pch-type" style="color:rgba(255,255,255,.7)"><i class="ti ti-theater"></i> Musical</div>
+            <div class="pch-title">Hamilton</div>
+            <div class="pch-sub">June 20–22 · Grand Playhouse</div>
+          </div>
+          <div class="pcb">
+            <div class="pmeta"><div class="pm"><strong>Director</strong>Lin Chen</div><div class="pm"><strong>Acts</strong>2</div><div class="pm"><strong>Scenes</strong>22</div><div class="pm"><strong>Status</strong><span class="pill pa" style="font-size:9px">Prep 60%</span></div></div>
+            <div class="sl">Characters & interpreters</div>
+            <div class="song-list">
+              <div class="song-item ok"><div><span style="font-weight:500">Alexander Hamilton</span> <span style="font-size:10px;color:var(--text-3)">580 lines · rapid-fire rap</span></div><span class="song-assigned">✓ A. Rivera</span></div>
+              <div class="song-item"><div><span style="font-weight:500">Aaron Burr</span> <span style="font-size:10px;color:var(--text-3)">430 lines · narrator role</span></div><span style="font-size:10px;color:var(--red);font-family:'DM Mono',monospace">⚠ Unassigned</span></div>
+              <div class="song-item"><div><span style="font-weight:500">Eliza Hamilton</span> <span style="font-size:10px;color:var(--text-3)">320 lines · emotional arc</span></div><span style="font-size:10px;color:var(--red);font-family:'DM Mono',monospace">⚠ Unassigned</span></div>
+              <div class="song-item"><div><span style="font-weight:500">Angelica Schuyler</span> <span style="font-size:10px;color:var(--text-3)">210 lines</span></div><span style="font-size:10px;color:var(--red);font-family:'DM Mono',monospace">⚠ Unassigned</span></div>
+              <div class="song-item" style="color:var(--text-3)">+ 8 more characters</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INTERPRETERS -->
+    <div class="page pi" id="page-interpreters">
+      <div class="tb-bar">
+        <div class="tb active" onclick="stab('int','roster',this)">Roster</div>
+        <div class="tb" onclick="stab('int','profiles',this)">Profiles</div>
+        <div class="tb" onclick="stab('int','avail',this)">Availability</div>
+      </div>
+      <div class="tp active" id="int-tab-roster">
+        <div class="card" style="overflow:hidden">
+          <table class="tbl">
+            <thead><tr><th>Interpreter</th><th>Certification</th><th>Specializations</th><th>Assignments</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              <tr><td><div style="display:flex;align-items:center;gap:9px"><div style="width:28px;height:28px;border-radius:50%;background:var(--green-light);color:var(--green);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center">AR</div><div><div style="font-weight:500">Alex Rivera</div><div style="font-size:11px;color:var(--text-3)">alex@signhq.app</div></div></div></td><td><span class="pill pg">NIC Master</span></td><td><div style="display:flex;gap:3px;flex-wrap:wrap"><span class="pill pp" style="font-size:9px">Music</span><span class="pill pa" style="font-size:9px">Theater</span><span class="pill pb" style="font-size:9px">Medical</span></div></td><td style="font-family:'DM Mono',monospace">6 active</td><td><span class="pill pg">Available</span></td><td><button class="btn sm ghost" onclick="openProfModal('Alex Rivera','NIC Master · 8 yrs','AR','var(--green)')"><i class="ti ti-eye"></i></button></td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:9px"><div style="width:28px;height:28px;border-radius:50%;background:var(--blue-light);color:var(--blue);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center">MK</div><div><div style="font-weight:500">Mei Kim</div><div style="font-size:11px;color:var(--text-3)">mei@signhq.app</div></div></div></td><td><span class="pill pg">NIC Advanced</span></td><td><div style="display:flex;gap:3px;flex-wrap:wrap"><span class="pill pa" style="font-size:9px">Theater</span><span class="pill pb" style="font-size:9px">Legal</span></div></td><td style="font-family:'DM Mono',monospace">4 active</td><td><span class="pill pg">Available</span></td><td><button class="btn sm ghost" onclick="openProfModal('Mei Kim','NIC Advanced · 5 yrs','MK','var(--blue)')"><i class="ti ti-eye"></i></button></td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:9px"><div style="width:28px;height:28px;border-radius:50%;background:var(--purple-light);color:var(--purple);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center">LR</div><div><div style="font-weight:500">Lena Reyes</div><div style="font-size:11px;color:var(--text-3)">lena@signhq.app</div></div></div></td><td><span class="pill pg">NIC</span></td><td><div style="display:flex;gap:3px;flex-wrap:wrap"><span class="pill pp" style="font-size:9px">Music</span><span class="pill pz" style="font-size:9px">Education</span></div></td><td style="font-family:'DM Mono',monospace">3 active</td><td><span class="pill pa">Busy Jun 8–12</span></td><td><button class="btn sm ghost" onclick="openProfModal('Lena Reyes','NIC · 3 yrs','LR','var(--purple)')"><i class="ti ti-eye"></i></button></td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:9px"><div style="width:28px;height:28px;border-radius:50%;background:var(--amber-light);color:var(--amber);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center">JT</div><div><div style="font-weight:500">James Tran</div><div style="font-size:11px;color:var(--text-3)">jtran@signhq.app</div></div></div></td><td><span class="pill pg">CDI</span></td><td><div style="display:flex;gap:3px;flex-wrap:wrap"><span class="pill pb" style="font-size:9px">Medical</span><span class="pill pz" style="font-size:9px">Mental Health</span></div></td><td style="font-family:'DM Mono',monospace">2 active</td><td><span class="pill pg">Available</span></td><td><button class="btn sm ghost" onclick="openProfModal('James Tran','CDI · 6 yrs','JT','var(--amber)')"><i class="ti ti-eye"></i></button></td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:9px"><div style="width:28px;height:28px;border-radius:50%;background:var(--surface3);color:var(--text-2);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center">DW</div><div><div style="font-weight:500">Dana Wheeler</div><div style="font-size:11px;color:var(--text-3)">dana@signhq.app</div></div></div></td><td><span class="pill pz">RID CI</span></td><td><div style="display:flex;gap:3px;flex-wrap:wrap"><span class="pill pz" style="font-size:9px">Government</span><span class="pill pb" style="font-size:9px">Education</span></div></td><td style="font-family:'DM Mono',monospace">2 active</td><td><span class="pill pr">Unavailable</span></td><td><button class="btn sm ghost" onclick="openProfModal('Dana Wheeler','RID CI · 4 yrs','DW','var(--text-3)')"><i class="ti ti-eye"></i></button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="tp" id="int-tab-profiles">
+        <div class="g3">
+          <div class="card" onclick="openProfModal('Alex Rivera','NIC Master · 8 yrs','AR','var(--green)')" style="cursor:pointer;overflow:hidden">
+            <div class="prof-banner" style="background:linear-gradient(135deg,var(--green-dark),var(--green-mid))"></div>
+            <div class="prof-av-wrap"><div class="prof-av" style="background:var(--green)">AR</div><div class="prof-cert"><i class="ti ti-check" style="font-size:8px;color:#fff"></i></div></div>
+            <div style="padding:9px 20px 18px;margin-top:7px"><div style="font-weight:600;font-size:14px">Alex Rivera</div><div style="font-size:10px;color:var(--text-3);font-family:'DM Mono',monospace">NIC Master · 8 yrs</div><div class="tag-cl"><span class="pill pp" style="font-size:9px">Music</span><span class="pill pa" style="font-size:9px">Theater</span><span class="pill pb" style="font-size:9px">Medical</span></div><div style="margin-top:10px;font-size:11px;color:var(--text-2)">6 active · San Diego, CA</div></div>
+          </div>
+          <div class="card" onclick="openProfModal('Mei Kim','NIC Advanced · 5 yrs','MK','var(--blue)')" style="cursor:pointer;overflow:hidden">
+            <div class="prof-banner" style="background:linear-gradient(135deg,var(--blue),#4A90D9)"></div>
+            <div class="prof-av-wrap"><div class="prof-av" style="background:var(--blue)">MK</div><div class="prof-cert"><i class="ti ti-check" style="font-size:8px;color:#fff"></i></div></div>
+            <div style="padding:9px 20px 18px;margin-top:7px"><div style="font-weight:600;font-size:14px">Mei Kim</div><div style="font-size:10px;color:var(--text-3);font-family:'DM Mono',monospace">NIC Advanced · 5 yrs</div><div class="tag-cl"><span class="pill pa" style="font-size:9px">Theater</span><span class="pill pb" style="font-size:9px">Legal</span></div><div style="margin-top:10px;font-size:11px;color:var(--text-2)">4 active · Los Angeles, CA</div></div>
+          </div>
+          <div class="card" onclick="openProfModal('Lena Reyes','NIC · 3 yrs','LR','var(--purple)')" style="cursor:pointer;overflow:hidden">
+            <div class="prof-banner" style="background:linear-gradient(135deg,var(--purple),#9B6EDB)"></div>
+            <div class="prof-av-wrap"><div class="prof-av" style="background:var(--purple)">LR</div><div class="prof-cert"><i class="ti ti-check" style="font-size:8px;color:#fff"></i></div></div>
+            <div style="padding:9px 20px 18px;margin-top:7px"><div style="font-weight:600;font-size:14px">Lena Reyes</div><div style="font-size:10px;color:var(--text-3);font-family:'DM Mono',monospace">NIC · 3 yrs</div><div class="tag-cl"><span class="pill pp" style="font-size:9px">Music</span><span class="pill pz" style="font-size:9px">Education</span></div><div style="margin-top:10px;font-size:11px;color:var(--text-2)">3 active · San Diego, CA</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="tp" id="int-tab-avail">
+        <div class="card cp">
+          <div class="sl">Availability · June 2026</div>
+          <div style="overflow-x:auto">
+          <table class="tbl" style="font-size:12px;min-width:700px">
+            <thead><tr><th>Interpreter</th><th>Jun 5</th><th>Jun 7</th><th>Jun 8</th><th>Jun 10</th><th>Jun 12</th><th>Jun 14</th><th>Jun 18</th><th>Jun 20–22</th></tr></thead>
+            <tbody>
+              <tr><td style="font-weight:500">Alex Rivera</td><td><span class="pill pa" style="font-size:9px">Booked</span></td><td><span class="pill pg" style="font-size:9px">Free</span></td><td><span class="pill pg" style="font-size:9px">Free</span></td><td><span class="pill pa" style="font-size:9px">Booked</span></td><td><span class="pill pg" style="font-size:9px">Free</span></td><td><span class="pill pg" style="font-size:9px">Free</span></td><td><span class="pill pg" style="font-size:9px">Free</span></td><td><span class="pill pa" style="font-size:9px">Booked</span></td></tr>
+              <tr><td style="font-weight:500">Mei Kim</td><td><span class="pill pa" style="font-size:9px">Booked</span></td><td><span class="pill pg" style="font-size:9px">Free</span></td><td><span class="pill pg" style="font-size:9px">Free</span></td><td><span class="pill pg" style="font-size:9px">Free</span></td><td><span class="pill pg" style="font-size:9px">Free</span></td><td><span class="pill pa" style="font-size:9px">Booked</span></td><td><span class="pill pg" style="font-size:9px">Free</span></td><td><span class="pill pg" style="font-size:9px">Free</span></td></tr>
+              <tr><td style="font-weight:500">Lena Reyes</td><td><span class="pill pg" style="font-size:9px">Free</span></td><td><span class="pill pg" style="font-size:9px">Free</span></td><td><span class="pill pa" style="font-size:9px">Booked</span></td><td><span class="pill pg" style="font-size:9px">Free</span></td><td><span class="pill pr" style="font-size:9px">Blocked</span></td><td><span class="pill pr" style="font-size:9px">Blocked</span></td><td><span class="pill pg" style="font-size:9px">Free</span></td><td><span class="pill pg" style="font-size:9px">Free</span></td></tr>
+              <tr><td style="font-weight:500">James Tran</td><td><span class="pill pg" style="font-size:9px">Free</span></td><td><span class="pill pa" style="font-size:9px">Booked</span></td><td><span class="pill pg" style="font-size:9px">Free</span></td><td><span class="pill pg" style="font-size:9px">Free</span></td><td><span class="pill pg" style="font-size:9px">Free</span></td><td><span class="pill pg" style="font-size:9px">Free</span></td><td><span class="pill pg" style="font-size:9px">Free</span></td><td><span class="pill pg" style="font-size:9px">Free</span></td></tr>
+              <tr><td style="font-weight:500">Dana Wheeler</td><td><span class="pill pr" style="font-size:9px">Blocked</span></td><td><span class="pill pr" style="font-size:9px">Blocked</span></td><td><span class="pill pr" style="font-size:9px">Blocked</span></td><td><span class="pill pr" style="font-size:9px">Blocked</span></td><td><span class="pill pr" style="font-size:9px">Blocked</span></td><td><span class="pill pr" style="font-size:9px">Blocked</span></td><td><span class="pill pg" style="font-size:9px">Free</span></td><td><span class="pill pg" style="font-size:9px">Free</span></td></tr>
+            </tbody>
+          </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MY PROFILE -->
+    <div class="page pi" id="page-myprofile">
+      <div class="g2">
+        <div class="card" style="overflow:hidden">
+          <div class="prof-banner" style="background:linear-gradient(135deg,var(--green-dark),var(--green-mid))"></div>
+          <div style="padding:0 22px 22px">
+            <div class="prof-av-wrap"><div class="prof-av" style="background:var(--green)" id="my-av-text">AR</div><div class="prof-cert"><i class="ti ti-check" style="font-size:8px;color:#fff"></i></div></div>
+            <div style="margin-top:14px">
+              <div style="font-family:'DM Serif Display',serif;font-size:22px" id="my-fullname">Alex Rivera</div>
+              <div style="font-size:11px;color:var(--text-3);font-family:'DM Mono',monospace;margin-top:2px">NIC Master Interpreter · Team Coordinator</div>
+              <div style="font-size:12px;color:var(--text-2);margin-top:5px">San Diego, CA · 8 years experience</div>
+              <div class="tag-cl"><span class="pill pp">Music/Performing Arts</span><span class="pill pa">Theater</span><span class="pill pb">Medical</span><span class="pill pg">Legal</span><span class="pill pz">Education</span></div>
+              <div style="margin-top:13px;font-size:13px;color:var(--text-2);line-height:1.7">NIC Master certified interpreter specializing in performing arts, with extensive experience in concerts, musicals, and theatrical productions. Trained in conceptual accuracy, music theory, and aesthetic signing.</div>
+              <div style="display:flex;gap:8px;margin-top:14px"><button class="btn sm primary"><i class="ti ti-edit"></i> Edit Profile</button><button class="btn sm ghost"><i class="ti ti-share"></i> Share</button></div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="card cp">
+            <div class="sl">Certifications & credentials</div>
+            <div style="display:flex;flex-direction:column;gap:7px">
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 11px;background:var(--green-light);border-radius:8px;border:1px solid rgba(46,107,74,.2)"><div><div style="font-size:13px;font-weight:500;color:var(--green-dark)">NIC Master</div><div style="font-size:10px;color:var(--green);font-family:'DM Mono',monospace">Registry of Interpreters for the Deaf</div></div><span class="pill pg">Active</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 11px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)"><div><div style="font-size:13px;font-weight:500">QMHI</div><div style="font-size:10px;color:var(--text-3);font-family:'DM Mono',monospace">Qualified Mental Health Interpreter</div></div><span class="pill pg">Active</span></div>
+              <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 11px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)"><div><div style="font-size:13px;font-weight:500">Performing Arts Specialist</div><div style="font-size:10px;color:var(--text-3);font-family:'DM Mono',monospace">NAD Training · 2022</div></div><span class="pill pg">Verified</span></div>
+            </div>
+          </div>
+          <div class="card cp">
+            <div class="sl">Performance stats</div>
+            <div class="g2" style="gap:10px">
+              <div class="stat"><div class="stat-val">94</div><div class="stat-label">Completed</div></div>
+              <div class="stat"><div class="stat-val">4.9</div><div class="stat-label">Avg Rating</div></div>
+              <div class="stat"><div class="stat-val">28</div><div class="stat-label">Productions</div></div>
+              <div class="stat"><div class="stat-val">100%</div><div class="stat-label">Show Rate</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CODE OF ETHICS -->
+    <div class="page pi" id="page-ethics">
+      <div class="card cp" style="margin-bottom:14px;background:var(--green-light);border-color:rgba(46,107,74,.25)">
+        <div style="font-family:'DM Serif Display',serif;font-size:16px;color:var(--green-dark);margin-bottom:3px">NAD/RID Code of Professional Conduct</div>
+        <div style="font-size:11px;color:var(--green);font-family:'DM Mono',monospace">Seven Tenets · Effective Standard of Practice</div>
+      </div>
+      <div class="eth-t"><div class="eth-n">TENET 1</div><div class="eth-title">Confidentiality</div><div class="eth-text">Interpreters hold information received during interpreting assignments confidential. This includes names, personal or professional information, and any information that is part of the assignment context. Interpreters do not reveal private information shared during assignments to anyone who is not a direct party in the communication.</div></div>
+      <div class="eth-t"><div class="eth-n">TENET 2</div><div class="eth-title">Professional Skills & Knowledge</div><div class="eth-text">Interpreters accept assignments only when they have the requisite skills and knowledge to work effectively, including appropriate language competence in both languages. Interpreters assess their own skills and take responsibility for self-improvement through ongoing professional development.</div></div>
+      <div class="eth-t"><div class="eth-n">TENET 3</div><div class="eth-title">Conduct</div><div class="eth-text">Interpreters are professionals who bring a set of skills and a code of professional ethics to every assignment. Interpreters behave professionally in demeanor and appearance, and adhere to the ethical practices of the profession as described in this code.</div></div>
+      <div class="eth-t"><div class="eth-n">TENET 4</div><div class="eth-title">Respect for Consumers</div><div class="eth-text">Interpreters are committed to equitable communication access for all parties. Interpreters treat all consumers with respect, impartiality, and professional consideration regardless of race, color, national origin, gender, sexual orientation, religion, age, or disability.</div></div>
+      <div class="eth-t"><div class="eth-n">TENET 5</div><div class="eth-title">Respect for Colleagues</div><div class="eth-text">Interpreters are members of a professional community. Interpreters treat colleagues with collegiality and professionalism. When working as a team, interpreters support their partners and do not engage in behavior that discredits, dishonors, or denigrates their colleagues.</div></div>
+      <div class="eth-t"><div class="eth-n">TENET 6</div><div class="eth-title">Ethical Business Practices</div><div class="eth-text">Interpreters engage in fair and honest business practices. Interpreters accurately represent their skills, education, certifications, and experience. Interpreters set rates based on their professional skills, locale, and market conditions. Interpreters honor commitments made to referral agencies, direct clients, and consumers.</div></div>
+      <div class="eth-t"><div class="eth-n">TENET 7</div><div class="eth-title">Professional Development</div><div class="eth-text">Interpreters continue their professional development, maintain competence through ongoing education, and take advantage of opportunities to advance their knowledge and skills. Interpreters are committed to providing the highest quality of service through lifelong learning.</div></div>
+      <div class="card cp" style="margin-top:14px">
+        <div class="sl">Performing Arts Addendum</div>
+        <div style="display:flex;flex-direction:column;gap:8px;font-size:13px;color:var(--text-2);line-height:1.7">
+          <div style="display:flex;gap:9px"><i class="ti ti-point-filled" style="color:var(--green);flex-shrink:0;margin-top:4px"></i><div><strong>Team rotation:</strong> When co-interpreting, agree on rotation schedule before the assignment. Support your partner and communicate needs clearly.</div></div>
+          <div style="display:flex;gap:9px"><i class="ti ti-point-filled" style="color:var(--green);flex-shrink:0;margin-top:4px"></i><div><strong>Prep obligation:</strong> Obtain and review scripts, lyrics, and scores in advance. Work with directors to understand artistic intent and Deaf cultural representation goals.</div></div>
+          <div style="display:flex;gap:9px"><i class="ti ti-point-filled" style="color:var(--green);flex-shrink:0;margin-top:4px"></i><div><strong>Cultural consultation:</strong> For productions involving culturally-specific content, consult with Deaf community members for authentic representation.</div></div>
+          <div style="display:flex;gap:9px"><i class="ti ti-point-filled" style="color:var(--green);flex-shrink:0;margin-top:4px"></i><div><strong>Impartiality:</strong> Interpreters do not counsel, advise, or interject personal opinions. Maintain the speaker's intent and register throughout.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PREP MATERIALS -->
+    <div class="page pi" id="page-prep">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="btn primary sm" onclick="showToast('Upload dialog — connect cloud storage to enable')"><i class="ti ti-upload"></i> Upload Material</button></div>
+      <div class="tb-bar">
+        <div class="tb active" onclick="stab('prep','all',this)">All Files</div>
+        <div class="tb" onclick="stab('prep','scripts',this)">Scripts & Lyrics</div>
+        <div class="tb" onclick="stab('prep','vocab',this)">Vocab / Glosses</div>
+        <div class="tb" onclick="stab('prep','video',this)">Reference Videos</div>
+      </div>
+      <div class="tp active" id="prep-tab-all">
+        <div class="card" style="overflow:hidden">
+          <table class="tbl">
+            <thead><tr><th>File</th><th>Production</th><th>Type</th><th>Uploaded</th><th>By</th><th></th></tr></thead>
+            <tbody>
+              <tr><td><div style="display:flex;align-items:center;gap:7px"><i class="ti ti-file-text" style="color:var(--amber)"></i><span style="font-weight:500">Phantom_ActII_Script.pdf</span></div></td><td>Phantom of the Opera</td><td><span class="pill pa">Script</span></td><td style="font-family:'DM Mono',monospace;font-size:12px">Jun 1</td><td style="font-size:12px">Patricia Osei</td><td><button class="btn sm ghost"><i class="ti ti-download"></i></button></td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:7px"><i class="ti ti-file-music" style="color:var(--purple)"></i><span style="font-weight:500">TS_Tribute_Setlist_Lyrics.docx</span></div></td><td>Taylor Swift Tribute</td><td><span class="pill pp">Lyrics</span></td><td style="font-family:'DM Mono',monospace;font-size:12px">May 28</td><td style="font-size:12px">Jamie Cortez</td><td><button class="btn sm ghost"><i class="ti ti-download"></i></button></td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:7px"><i class="ti ti-file-spreadsheet" style="color:var(--blue)"></i><span style="font-weight:500">Medical_Conference_Vocab.xlsx</span></div></td><td>Medical Conference</td><td><span class="pill pb">Gloss List</span></td><td style="font-family:'DM Mono',monospace;font-size:12px">May 22</td><td style="font-size:12px">Alex Rivera</td><td><button class="btn sm ghost"><i class="ti ti-download"></i></button></td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:7px"><i class="ti ti-video" style="color:var(--red)"></i><span style="font-weight:500">Hamilton_Music_Reference.mp4</span></div></td><td>Hamilton</td><td><span class="pill pz">Video Ref</span></td><td style="font-family:'DM Mono',monospace;font-size:12px">May 18</td><td style="font-size:12px">Mei Kim</td><td><button class="btn sm ghost"><i class="ti ti-download"></i></button></td></tr>
+              <tr><td><div style="display:flex;align-items:center;gap:7px"><i class="ti ti-file-text" style="color:var(--amber)"></i><span style="font-weight:500">Hamilton_Full_Script.pdf</span></div></td><td>Hamilton</td><td><span class="pill pa">Script</span></td><td style="font-family:'DM Mono',monospace;font-size:12px">May 15</td><td style="font-size:12px">Lin Chen</td><td><button class="btn sm ghost"><i class="ti ti-download"></i></button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="tp" id="prep-tab-scripts"><div class="card cp"><div style="color:var(--text-3);font-size:13px">3 scripts & lyric files available</div></div></div>
+      <div class="tp" id="prep-tab-vocab"><div class="card cp"><div style="color:var(--text-3);font-size:13px">2 vocab/gloss files available</div></div></div>
+      <div class="tp" id="prep-tab-video"><div class="card cp"><div style="color:var(--text-3);font-size:13px">1 reference video available</div></div></div>
+    </div>
+
+    <!-- FINANCES -->
+    <div class="page pi" id="page-finances">
+      <div class="tb-bar">
+        <div class="tb active" onclick="stab('fin','inv',this)">Invoices</div>
+        <div class="tb" onclick="stab('fin','create',this)">Create Invoice</div>
+        <div class="tb" onclick="stab('fin','reports',this)">Reports</div>
+      </div>
+      <div class="tp active" id="fin-tab-inv">
+        <div class="g4" style="margin-bottom:16px">
+          <div class="stat"><div class="stat-val">$7,480</div><div class="stat-label">Outstanding</div><div class="stat-delta" style="color:var(--amber)">3 invoices</div></div>
+          <div class="stat"><div class="stat-val">$14,240</div><div class="stat-label">Paid YTD</div><div class="stat-delta">↑ 18% vs last yr</div></div>
+          <div class="stat"><div class="stat-val">$1,840</div><div class="stat-label">Overdue</div><div class="stat-delta" style="color:var(--red)">12+ days late</div></div>
+          <div class="stat"><div class="stat-val">31 days</div><div class="stat-label">Avg Pay Time</div></div>
+        </div>
+        <div class="card" style="overflow:hidden">
+          <table class="tbl">
+            <thead><tr><th>Invoice</th><th>Client</th><th>Assignment</th><th>Amount</th><th>Issued</th><th>Status</th><th></th></tr></thead>
+            <tbody>
+              <tr><td style="font-family:'DM Mono',monospace;font-size:12px;font-weight:500">INV-2024-031</td><td>Riverside Theater</td><td>Phantom Act II</td><td style="font-weight:600">$640</td><td style="font-size:12px;color:var(--text-3)">Jun 1</td><td><span class="pill pa">Sent</span></td><td><button class="btn sm ghost"><i class="ti ti-eye"></i></button></td></tr>
+              <tr><td style="font-family:'DM Mono',monospace;font-size:12px;font-weight:500">INV-2024-028</td><td>City Arts Council</td><td>NAACP Gala Prep</td><td style="font-weight:600">$1,200</td><td style="font-size:12px;color:var(--text-3)">May 22</td><td><span class="pill pr">Overdue</span></td><td><button class="btn sm ghost"><i class="ti ti-eye"></i></button></td></tr>
+              <tr><td style="font-family:'DM Mono',monospace;font-size:12px;font-weight:500">INV-2024-027</td><td>Convention Center</td><td>Medical Conference</td><td style="font-weight:600">$960</td><td style="font-size:12px;color:var(--text-3)">May 20</td><td><span class="pill pa">Sent</span></td><td><button class="btn sm ghost"><i class="ti ti-eye"></i></button></td></tr>
+              <tr><td style="font-family:'DM Mono',monospace;font-size:12px;font-weight:500">INV-2024-025</td><td>City Arts Council</td><td>State Deaf Forum</td><td style="font-weight:600">$960</td><td style="font-size:12px;color:var(--text-3)">Jun 1</td><td><span class="pill pg">Paid</span></td><td><button class="btn sm ghost"><i class="ti ti-eye"></i></button></td></tr>
+              <tr><td style="font-family:'DM Mono',monospace;font-size:12px;font-weight:500">INV-2024-022</td><td>State University</td><td>Commencement</td><td style="font-weight:600">$1,200</td><td style="font-size:12px;color:var(--text-3)">May 28</td><td><span class="pill pg">Paid</span></td><td><button class="btn sm ghost"><i class="ti ti-eye"></i></button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="tp" id="fin-tab-create">
+        <div class="g2" style="align-items:start">
+          <div class="card cp">
+            <div class="sl">New invoice</div>
+            <div class="fr fr2"><div class="field"><label>Client Name</label><input type="text" placeholder="Riverside Theater" id="inv-client"></div><div class="field"><label>Invoice #</label><input type="text" value="INV-2024-032" readonly></div></div>
+            <div class="fr fr2"><div class="field"><label>Assignment</label><select id="inv-assign"><option>Taylor Swift Tribute Concert</option><option>Hamilton Weekend Run</option><option>Beyoncé Tribute Night</option><option>City Council Meeting</option></select></div><div class="field"><label>Date</label><input type="date" value="2026-06-03"></div></div>
+            <div class="fr fr3"><div class="field"><label>Hours</label><input type="number" id="inv-hrs" value="2" min="0.5" step="0.5" oninput="calcInv()"></div><div class="field"><label>Rate ($/hr)</label><input type="number" id="inv-rate" value="180" oninput="calcInv()"></div><div class="field"><label>Co-Interp Hours</label><input type="number" id="inv-co" value="2" min="0" step="0.5" oninput="calcInv()"></div></div>
+            <div class="fr fr2"><div class="field"><label>Travel ($)</label><input type="number" id="inv-travel" value="0" oninput="calcInv()"></div><div class="field"><label>Prep Hours</label><input type="number" id="inv-prep" value="0" step="0.5" oninput="calcInv()"></div></div>
+            <div class="fr fr1"><div class="field"><label>Notes</label><textarea placeholder="Additional details..."></textarea></div></div>
+            <div id="inv-preview" style="margin-top:4px"></div>
+            <div style="display:flex;gap:8px;margin-top:13px"><button class="btn primary" onclick="showToast('Invoice created and sent!')"><i class="ti ti-send"></i> Send Invoice</button><button class="btn ghost" onclick="showToast('Draft saved')"><i class="ti ti-device-floppy"></i> Save Draft</button></div>
+          </div>
+          <div class="card cp">
+            <div class="sl">Rate card</div>
+            <div style="display:flex;flex-direction:column;gap:5px;font-size:13px">
+              <div class="inv-row"><span>Standard (business / medical)</span><span style="font-family:'DM Mono',monospace">$150–175/hr</span></div>
+              <div class="inv-row"><span>Performing Arts</span><span style="font-family:'DM Mono',monospace">$175–225/hr</span></div>
+              <div class="inv-row"><span>Legal / Court</span><span style="font-family:'DM Mono',monospace">$200–250/hr</span></div>
+              <div class="inv-row"><span>Team (per interpreter)</span><span style="font-family:'DM Mono',monospace">$150–200/hr</span></div>
+              <div class="inv-row"><span>2-hour minimum booking</span><span style="font-family:'DM Mono',monospace">$300</span></div>
+              <div class="inv-row"><span>Prep / music/theater</span><span style="font-family:'DM Mono',monospace">$75/hr</span></div>
+              <div class="inv-row"><span>Travel (over 25 mi)</span><span style="font-family:'DM Mono',monospace">IRS rate + $30</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tp" id="fin-tab-reports">
+        <div class="g2">
+          <div class="card cp">
+            <div class="sl">Revenue by type · 2026 YTD</div>
+            <div style="display:flex;flex-direction:column;gap:9px;margin-top:4px">
+              <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span>Performing Arts</span><span style="font-weight:600">$6,840 (48%)</span></div><div class="pbar"><div class="pbf" style="width:48%;background:var(--purple)"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span>Medical / Healthcare</span><span style="font-weight:600">$3,200 (22%)</span></div><div class="pbar"><div class="pbf" style="width:22%;background:var(--blue)"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span>Legal</span><span style="font-weight:600">$2,400 (17%)</span></div><div class="pbar"><div class="pbf" style="width:17%;background:var(--amber)"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px"><span>Education</span><span style="font-weight:600">$1,800 (13%)</span></div><div class="pbar"><div class="pbf" style="width:13%"></div></div></div>
+            </div>
+          </div>
+          <div class="card cp">
+            <div class="sl">Monthly Revenue · 2026</div>
+            <div style="display:flex;flex-direction:column;gap:5px;font-size:12px">
+              <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-2)">January</span><span style="font-weight:600;font-family:'DM Mono',monospace">$2,640</span></div>
+              <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-2)">February</span><span style="font-weight:600;font-family:'DM Mono',monospace">$1,920</span></div>
+              <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-2)">March</span><span style="font-weight:600;font-family:'DM Mono',monospace">$2,880</span></div>
+              <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-2)">April</span><span style="font-weight:600;font-family:'DM Mono',monospace">$2,440</span></div>
+              <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-2)">May</span><span style="font-weight:600;font-family:'DM Mono',monospace">$3,080</span></div>
+              <div style="display:flex;justify-content:space-between;padding:5px 0"><span style="color:var(--text-2)">June (MTD)</span><span style="font-weight:600;font-family:'DM Mono',monospace;color:var(--green)">$4,280</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-ov" id="modal-new-assign" onclick="if(event.target===this)closeM('new-assign')">
+  <div class="modal"><div class="mh"><h2>New Assignment</h2><button class="btn sm ghost" onclick="closeM('new-assign')"><i class="ti ti-x"></i></button></div>
+  <div class="mb">
+    <div class="fr fr2"><div class="field"><label>Assignment Title</label><input type="text" placeholder="e.g. Medical Conference Keynote"></div><div class="field"><label>Type</label><select><option>General</option><option>Concert</option><option>Musical/Play</option><option>Legal</option><option>Medical</option><option>Education</option><option>Government</option></select></div></div>
+    <div class="fr fr2"><div class="field"><label>Date</label><input type="date"></div><div class="field"><label>Time</label><input type="time"></div></div>
+    <div class="fr fr2"><div class="field"><label>Venue / Location</label><input type="text" placeholder="Convention Center"></div><div class="field"><label>Client / Contact</label><input type="text"></div></div>
+    <div class="fr fr3"><div class="field"><label>Duration (hrs)</label><input type="number" value="2" step="0.5"></div><div class="field"><label>Rate ($/hr)</label><input type="number" value="175"></div><div class="field"><label>Interpreters Needed</label><input type="number" value="1"></div></div>
+    <div class="fr fr1"><div class="field"><label>Notes / Director Requests</label><textarea placeholder="Special requirements, team preferences..."></textarea></div></div>
+  </div>
+  <div class="mf"><button class="btn ghost" onclick="closeM('new-assign')">Cancel</button><button class="btn primary" onclick="closeM('new-assign');showToast('Assignment created!')"><i class="ti ti-check"></i> Create</button></div></div>
+</div>
+
+<div class="modal-ov" id="modal-assign-detail" onclick="if(event.target===this)closeM('assign-detail')">
+  <div class="modal"><div class="mh"><h2 id="mad-title">Assignment Detail</h2><button class="btn sm ghost" onclick="closeM('assign-detail')"><i class="ti ti-x"></i></button></div>
+  <div class="mb">
+    <div class="fr fr2"><div class="field"><label>Assign Interpreter</label><select><option>Alex Rivera (NIC Master)</option><option>Mei Kim (NIC Advanced)</option><option>Lena Reyes (NIC)</option><option>James Tran (CDI)</option><option>Dana Wheeler (RID CI)</option></select></div><div class="field"><label>Role</label><select><option>Primary</option><option>Secondary / Support</option><option>CDI Partner</option><option>Team Lead</option></select></div></div>
+    <div class="fr fr2"><div class="field"><label>Date</label><input type="date" value="2026-06-08"></div><div class="field"><label>Time</label><input type="time" value="20:00"></div></div>
+    <div class="fr fr2"><div class="field"><label>Duration (hrs)</label><input type="number" value="2" step="0.5"></div><div class="field"><label>Rate ($/hr)</label><input type="number" value="180"></div></div>
+    <div class="fr fr1"><div class="field"><label>Director Requests / Notes</label><textarea placeholder="ASL storytelling approach for choruses, emotional intent over literal translation..."></textarea></div></div>
+  </div>
+  <div class="mf"><button class="btn ghost" onclick="closeM('assign-detail')">Cancel</button><button class="btn primary" onclick="closeM('assign-detail');showToast('Interpreter assigned!')">Confirm Assignment</button></div></div>
+</div>
+
+<div class="modal-ov" id="modal-profile-view" onclick="if(event.target===this)closeM('profile-view')">
+  <div class="modal"><div class="mh"><h2 id="mpv-name">Interpreter Profile</h2><button class="btn sm ghost" onclick="closeM('profile-view')"><i class="ti ti-x"></i></button></div>
+  <div class="mb">
+    <div style="display:flex;align-items:center;gap:15px;margin-bottom:16px">
+      <div id="mpv-av" style="width:52px;height:52px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:18px;color:#fff">AR</div>
+      <div><div style="font-family:'DM Serif Display',serif;font-size:18px" id="mpv-fullname">Alex Rivera</div><div style="font-size:10px;color:var(--text-3);font-family:'DM Mono',monospace" id="mpv-cred">NIC Master · 8 years</div><div class="tag-cl" style="margin-top:5px"><span class="pill pp" style="font-size:9px">Music</span><span class="pill pa" style="font-size:9px">Theater</span><span class="pill pb" style="font-size:9px">Medical</span></div></div>
+    </div>
+    <div class="fr fr2"><div class="field"><label>Phone</label><input readonly value="(619) 555-0142"></div><div class="field"><label>Email</label><input readonly value="alex@signhq.app"></div></div>
+    <div class="fr fr3"><div class="field"><label>Active Assignments</label><input readonly value="6"></div><div class="field"><label>Total Completed</label><input readonly value="94"></div><div class="field"><label>Rating</label><input readonly value="4.9 / 5.0"></div></div>
+    <div class="sl" style="margin-top:8px">Upcoming assignments</div>
+    <div style="display:flex;flex-direction:column;gap:5px">
+      <div style="padding:7px 11px;background:var(--surface2);border-radius:7px;font-size:12px;border:1px solid var(--border)"><strong>Jun 5</strong> — Phantom of the Opera, Act II · Riverside Theater</div>
+      <div style="padding:7px 11px;background:var(--surface2);border-radius:7px;font-size:12px;border:1px solid var(--border)"><strong>Jun 10</strong> — City Council Meeting</div>
+      <div style="padding:7px 11px;background:var(--surface2);border-radius:7px;font-size:12px;border:1px solid var(--border)"><strong>Jun 20–22</strong> — Hamilton, Grand Playhouse</div>
+    </div>
+  </div>
+  <div class="mf"><button class="btn ghost" onclick="closeM('profile-view')">Close</button><button class="btn primary" onclick="closeM('profile-view');openAssignModal(document.getElementById('mpv-name').textContent)">Assign to Job</button></div></div>
+</div>
+
+<div class="modal-ov" id="modal-new-item" onclick="if(event.target===this)closeM('new-item')">
+  <div class="modal"><div class="mh"><h2>Create New</h2><button class="btn sm ghost" onclick="closeM('new-item')"><i class="ti ti-x"></i></button></div>
+  <div class="mb">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="padding:16px;border:1px solid var(--border);border-radius:10px;cursor:pointer;text-align:center;transition:all .14s" onclick="closeM('new-item');openModal('new-assign')" onmouseover="this.style.borderColor='var(--green)'" onmouseout="this.style.borderColor='var(--border)'">
+        <i class="ti ti-briefcase" style="font-size:28px;color:var(--green);margin-bottom:8px;display:block"></i>
+        <div style="font-weight:600;font-size:14px">Assignment</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:3px">New interpreting job</div>
+      </div>
+      <div style="padding:16px;border:1px solid var(--border);border-radius:10px;cursor:pointer;text-align:center;transition:all .14s" onclick="closeM('new-item');openModal('new-concert')" onmouseover="this.style.borderColor='var(--purple)'" onmouseout="this.style.borderColor='var(--border)'">
+        <i class="ti ti-microphone-2" style="font-size:28px;color:var(--purple);margin-bottom:8px;display:block"></i>
+        <div style="font-weight:600;font-size:14px">Concert</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:3px">Music event with song cards</div>
+      </div>
+      <div style="padding:16px;border:1px solid var(--border);border-radius:10px;cursor:pointer;text-align:center;transition:all .14s" onclick="closeM('new-item');openModal('new-play')" onmouseover="this.style.borderColor='var(--amber)'" onmouseout="this.style.borderColor='var(--border)'">
+        <i class="ti ti-theater" style="font-size:28px;color:var(--amber);margin-bottom:8px;display:block"></i>
+        <div style="font-weight:600;font-size:14px">Musical / Play</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:3px">Production with scene cards</div>
+      </div>
+      <div style="padding:16px;border:1px solid var(--border);border-radius:10px;cursor:pointer;text-align:center;transition:all .14s" onclick="closeM('new-item');nav('finances',null);stab('fin','create',document.querySelector('.tb'))" onmouseover="this.style.borderColor='var(--blue)'" onmouseout="this.style.borderColor='var(--border)'">
+        <i class="ti ti-receipt" style="font-size:28px;color:var(--blue);margin-bottom:8px;display:block"></i>
+        <div style="font-weight:600;font-size:14px">Invoice</div>
+        <div style="font-size:11px;color:var(--text-3);margin-top:3px">Billing & payment request</div>
+      </div>
+    </div>
+  </div>
+  <div class="mf"><button class="btn ghost" onclick="closeM('new-item')">Cancel</button></div></div>
+</div>
+
+<div class="modal-ov" id="modal-new-concert" onclick="if(event.target===this)closeM('new-concert')">
+  <div class="modal"><div class="mh"><h2>New Concert</h2><button class="btn sm ghost" onclick="closeM('new-concert')"><i class="ti ti-x"></i></button></div>
+  <div class="mb">
+    <div class="fr fr1"><div class="field"><label>Concert / Event Name</label><input type="text" placeholder="e.g. Beyoncé Renaissance World Tour Tribute"></div></div>
+    <div class="fr fr2"><div class="field"><label>Date</label><input type="date"></div><div class="field"><label>Time</label><input type="time"></div></div>
+    <div class="fr fr2"><div class="field"><label>Venue</label><input type="text" placeholder="Riverside Amphitheater"></div><div class="field"><label>Director / Contact</label><input type="text"></div></div>
+    <div class="fr fr3"><div class="field"><label>Estimated Songs</label><input type="number" placeholder="22"></div><div class="field"><label>Est. Total Words</label><input type="number" placeholder="8400"></div><div class="field"><label>Interpreters Needed</label><input type="number" placeholder="2"></div></div>
+    <div class="fr fr1"><div class="field"><label>Director Requests / Artistic Notes</label><textarea placeholder="ASL-centric approach, emotional intent, cultural notes..."></textarea></div></div>
+    <div class="fr fr1"><div class="field"><label>Background / Cultural Context</label><textarea placeholder="Genre, artist history, Deaf community relevance, AAVE considerations..."></textarea></div></div>
+  </div>
+  <div class="mf"><button class="btn ghost" onclick="closeM('new-concert')">Cancel</button><button class="btn primary" onclick="closeM('new-concert');showToast('Concert created!')"><i class="ti ti-plus"></i> Create Concert</button></div></div>
+</div>
+
+<div class="modal-ov" id="modal-new-play" onclick="if(event.target===this)closeM('new-play')">
+  <div class="modal"><div class="mh"><h2>New Production</h2><button class="btn sm ghost" onclick="closeM('new-play')"><i class="ti ti-x"></i></button></div>
+  <div class="mb">
+    <div class="fr fr2"><div class="field"><label>Production Title</label><input type="text" placeholder="e.g. Hamilton"></div><div class="field"><label>Type</label><select><option>Musical</option><option>Play</option><option>Opera</option><option>Dance / Movement</option><option>Spoken Word</option></select></div></div>
+    <div class="fr fr2"><div class="field"><label>Run Dates</label><input type="text" placeholder="Jun 20–22, 2026"></div><div class="field"><label>Venue</label><input type="text" placeholder="Grand Playhouse"></div></div>
+    <div class="fr fr3"><div class="field"><label>Director</label><input type="text" placeholder="Lin Chen"></div><div class="field"><label>Acts</label><input type="number" value="2"></div><div class="field"><label>Scenes</label><input type="number" value="22"></div></div>
+    <div class="fr fr3"><div class="field"><label>Est. Total Lines</label><input type="number" placeholder="2800"></div><div class="field"><label>Characters</label><input type="number" placeholder="12"></div><div class="field"><label>Interpreters Needed</label><input type="number" placeholder="3"></div></div>
+    <div class="fr fr1"><div class="field"><label>Director Notes / Artistic Vision</label><textarea placeholder="Stylistic preferences, cultural emphasis, character-specific notes..."></textarea></div></div>
+    <div class="fr fr1"><div class="field"><label>Background / Accessibility Goals</label><textarea placeholder="Historical context, Deaf rep goals, community consultation notes..."></textarea></div></div>
+  </div>
+  <div class="mf"><button class="btn ghost" onclick="closeM('new-play')">Cancel</button><button class="btn primary" onclick="closeM('new-play');showToast('Production created!')"><i class="ti ti-plus"></i> Create Production</button></div></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const PAGES={dashboard:['Dashboard','Welcome back — here\'s what\'s coming up'],calendar:['Calendar','Scheduled assignments and events'],kanban:['Assignments','Manage your pipeline'],concerts:['Concerts','Music events & song-by-song interpreter cards'],plays:['Musicals & Plays','Scene and character breakdowns'],interpreters:['Interpreters','Roster, profiles, availability'],myprofile:['My Profile','Your public interpreter profile'],ethics:['Code of Ethics','NAD/RID Code of Professional Conduct'],prep:['Prep Materials','Scripts, lyrics, glosses, reference files'],finances:['Finances','Invoices, billing, revenue reports']};
+
+function nav(page,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('active'));
+  const pg=document.getElementById('page-'+page);
+  if(pg) pg.classList.add('active');
+  if(el) el.classList.add('active');
+  const m=PAGES[page]||[page,''];
+  document.getElementById('tb-title').textContent=m[0];
+  document.getElementById('tb-sub').textContent=m[1];
+}
+
+function stab(ns,id,el){
+  const prefix=ns+'-tab-';
+  document.querySelectorAll('[id^="'+prefix+'"]').forEach(p=>p.classList.remove('active'));
+  const tp=document.getElementById(prefix+id);
+  if(tp) tp.classList.add('active');
+  if(el){el.closest('.tb-bar').querySelectorAll('.tb').forEach(t=>t.classList.remove('active'));el.classList.add('active')}
+}
+
+function openModal(id){const m=document.getElementById('modal-'+id);if(m)m.classList.add('open')}
+function closeM(id){const m=document.getElementById('modal-'+id);if(m)m.classList.remove('open')}
+
+function openAssignModal(title){
+  document.getElementById('mad-title').textContent=title||'Assignment Detail';
+  openModal('assign-detail');
+}
+
+function openProfModal(name,cred,initials,color){
+  document.getElementById('mpv-name').textContent=name;
+  document.getElementById('mpv-fullname').textContent=name;
+  document.getElementById('mpv-cred').textContent=cred||'';
+  const av=document.getElementById('mpv-av');
+  av.textContent=initials||name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  av.style.background=color||'var(--green)';
+  openModal('profile-view');
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.opacity='1';
+  clearTimeout(t._tid);
+  t._tid=setTimeout(()=>t.style.opacity='0',3000);
+}
+
+function calcInv(){
+  const hrs=parseFloat(document.getElementById('inv-hrs').value)||0;
+  const rate=parseFloat(document.getElementById('inv-rate').value)||0;
+  const co=parseFloat(document.getElementById('inv-co').value)||0;
+  const travel=parseFloat(document.getElementById('inv-travel').value)||0;
+  const prep=parseFloat(document.getElementById('inv-prep').value)||0;
+  const base=hrs*rate;
+  const coAmt=co*rate;
+  const prepAmt=prep*75;
+  const total=base+coAmt+travel+prepAmt;
+  const el=document.getElementById('inv-preview');
+  let html='';
+  if(base>0) html+=`<div class="inv-row"><span>Interpreting (${hrs}h × $${rate})</span><span style="font-weight:600">$${base.toFixed(0)}</span></div>`;
+  if(coAmt>0) html+=`<div class="inv-row"><span>Co-interpreter (${co}h × $${rate})</span><span style="font-weight:600">$${coAmt.toFixed(0)}</span></div>`;
+  if(prepAmt>0) html+=`<div class="inv-row"><span>Prep time (${prep}h × $75)</span><span style="font-weight:600">$${prepAmt.toFixed(0)}</span></div>`;
+  if(travel>0) html+=`<div class="inv-row"><span>Travel</span><span style="font-weight:600">$${travel.toFixed(0)}</span></div>`;
+  html+=`<div class="inv-total"><span>Total</span><span>$${total.toFixed(0)}</span></div>`;
+  el.innerHTML=html;
+}
+
+function buildCal(){
+  const grid=document.getElementById('cal-grid');
+  const evts={3:[{t:'Medical Conf',c:'ce-gen'}],5:[{t:'Phantom Act II',c:'ce-mus'}],7:[{t:'Medical Conf',c:'ce-gen'}],8:[{t:'TS Tribute',c:'ce-con'}],10:[{t:'City Council',c:'ce-mtg'}],14:[{t:'HS Graduation',c:'ce-gen'}],20:[{t:'Hamilton Day 1',c:'ce-mus'}],21:[{t:'Hamilton Day 2',c:'ce-mus'}],22:[{t:'Hamilton Day 3',c:'ce-mus'}],28:[{t:'NAACP Gala',c:'ce-gen'}]};
+  const existing=grid.querySelectorAll('.cal-cell');
+  existing.forEach(c=>c.remove());
+  // June 2026 starts on Monday (day index 1), pad 1 day for Sunday
+  for(let i=0;i<1;i++){const d=document.createElement('div');d.className='cal-cell om';d.innerHTML='<div class="cal-num">'+(31-i)+'</div>';grid.prepend(d)}
+  for(let d=1;d<=30;d++){
+    const c=document.createElement('div');
+    c.className='cal-cell'+(d===3?' today':'');
+    let h='<div class="cal-num">'+d+'</div>';
+    if(evts[d]) evts[d].forEach(e=>h+='<div class="ce '+e.c+'">'+e.t+'</div>');
+    c.innerHTML=h;
+    grid.appendChild(c);
+  }
+  for(let i=1;i<=5;i++){const d=document.createElement('div');d.className='cal-cell om';d.innerHTML='<div class="cal-num">'+i+'</div>';grid.appendChild(d)}
+}
+
+function showReg(){document.getElementById('am-login').style.display='none';document.getElementById('am-reg').style.display='block'}
+function showLogin(){document.getElementById('am-login').style.display='block';document.getElementById('am-reg').style.display='none'}
+
+function doLogin(){
+  const email=document.getElementById('lg-email').value;
+  const pass=document.getElementById('lg-pass').value;
+  if(!email||!pass){showToast('Please fill in all fields');return}
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app-shell').style.display='flex';
+  const name=email.includes('@')?email.split('@')[0].split(/[._]/).map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' '):'User';
+  const initials=name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+  document.getElementById('sb-name').textContent=name;
+  document.getElementById('sb-av').textContent=initials;
+  document.getElementById('my-fullname').textContent=name;
+  document.getElementById('my-av-text').textContent=initials;
+  const h=new Date().getHours();
+  const g=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+  document.getElementById('dash-greet').textContent=g+', '+name.split(' ')[0];
+  calcInv();
+}
+
+function doReg(){
+  const fn=document.getElementById('rg-fn').value;
+  const ln=document.getElementById('rg-ln').value;
+  const em=document.getElementById('rg-email').value;
+  if(!fn||!ln||!em){showToast('Please complete required fields');return}
+  showToast('Account created! Signing you in...');
+  setTimeout(()=>{document.getElementById('lg-email').value=em;showLogin();},900);
+}
+
+function doLogout(){
+  document.getElementById('app-shell').style.display='none';
+  document.getElementById('auth-screen').style.display='flex';
+  showLogin();
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  buildCal();
+  calcInv();
+  const h=new Date().getHours();
+  const g=h<12?'Good morning':h<17?'Good afternoon':'Good evening';
+  document.getElementById('dash-greet').textContent=g+', Alex';
+});
+</script>
+</body>
+</html>
